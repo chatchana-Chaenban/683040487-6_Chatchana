@@ -21,7 +21,7 @@ print(f"After payment: {tim.get_balance():,}\n")
 
 
 sarah.deposit(50000000)
-sarah_loan = BankAccount("Sarah", "loan", "-100000000")
+sarah_loan = BankAccount("Sarah", "loan", -100000000)
 
 john.print_customer()
 print()
