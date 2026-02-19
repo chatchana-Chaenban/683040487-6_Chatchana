@@ -18,7 +18,7 @@ class StudentGradeCalculatorUI(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Student Grade Calculator")
-        self.setGeometry(100, 100, 700, 500)
+        self.setGeometry(100, 100, 825, 625)
 
         self.setStyleSheet("Background-color: #f2f2f2;")
         self.central_widget = QWidget()
@@ -61,36 +61,38 @@ class StudentGradeCalculatorUI(QMainWindow):
 
 
     def input_section(self):
-        grid = QGridLayout()
-        self.main_layout.addLayout(grid)
+        name_input_layout = QHBoxLayout()
+        self.main_layout.addLayout(name_input_layout)
 
-        grid.addWidget(QLabel("Student ID:"),0 ,0)
+        name_input_layout.addWidget(QLabel("Student ID:"))
         self.id_combobox = QComboBox()
         self.id_combobox.currentTextChanged.connect(self.update_name)
-        grid.addWidget(self.id_combobox, 0, 1)
+        name_input_layout.addWidget(self.id_combobox)
 
-        grid.addWidget(QLabel("Student Name:"),0 ,3)
+        name_input_layout.addWidget(QLabel("Student Name:"))
         self.name_label = QLabel("")
+        name_input_layout.addWidget(self.name_label)
 
-        grid.addWidget(self.name_label, 0, 4)
+        Score_input_layout = QHBoxLayout()
+        self.main_layout.addLayout(Score_input_layout)
 
-        grid.addWidget(QLabel("Math Score:"), 2, 0)
+        Score_input_layout.addWidget(QLabel("Math Score:"))
         self.math_input = QSpinBox()
         self.math_input.setRange(0, 100)
         self.math_input.setValue(0)
-        grid.addWidget(self.math_input, 2, 1)
+        Score_input_layout.addWidget(self.math_input)
 
-        grid.addWidget(QLabel("Science Score:"), 3, 0)
+        Score_input_layout.addWidget(QLabel("Science Score:"))
         self.sci_input = QSpinBox()
         self.sci_input.setRange(0, 100)
         self.sci_input.setValue(0)
-        grid.addWidget(self.sci_input, 3, 1)
+        Score_input_layout.addWidget(self.sci_input,)
 
-        grid.addWidget(QLabel("English Score:"), 4, 0)
+        Score_input_layout.addWidget(QLabel("English Score:"))
         self.eng_input = QSpinBox()
         self.eng_input.setRange(0, 100)
         self.eng_input.setValue(0)
-        grid.addWidget(self.eng_input, 4, 1)
+        Score_input_layout.addWidget(self.eng_input)
 
     def clear_table(self):
         self.table.setRowCount(0)
@@ -145,11 +147,6 @@ class StudentGradeCalculatorUI(QMainWindow):
 
         grade_item = QTableWidgetItem(grade)
         grade_item.setTextAlignment(Qt.AlignCenter)
-
-        if grade == "A":
-            grade_item.setBackground(QColor("#4bad44"))  # green
-        elif grade == "F":
-            grade_item.setBackground(QColor("#a23030"))  # red
 
         self.sort_table()
 
@@ -226,7 +223,7 @@ class StudentGradeCalculatorUI(QMainWindow):
             }
             QPushButton {
                 padding: 8px;
-                background-color: #4A90E2;
+                background-color: #2ec1e6;
                 color: white;
                 border-radius: 5px;
             }
