@@ -6,11 +6,13 @@ P1
 
 import sys
 import os
+import re
 import pyperclip
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QFormLayout,
     QHBoxLayout, QLabel, QComboBox, QLineEdit, QPushButton,
-    QFrame, QSpinBox, QColorDialog, QFileDialog, QToolBar
+    QFrame, QSpinBox, QColorDialog, QFileDialog,
+    QToolBar, QMessageBox
 )
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QColor, QAction, QIcon, QPixmap
@@ -31,23 +33,23 @@ class PersonalCard(QMainWindow):
         self.setCentralWidget(central_widget)
         self.main_layout = QVBoxLayout(central_widget)
 
-        # Form
+        #  FORM 
         self.input_layout = QFormLayout()
         self.create_form()
         self.main_layout.addLayout(self.input_layout)
 
-        # Line
+        # Separator
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)
         self.main_layout.addWidget(line)
 
-        # Display
+        #  DISPLAY 
         self.bg_widget = QWidget()
         self.main_layout.addWidget(self.bg_widget)
         self.create_display()
 
-        # Bar 
+        #  MENU + TOOLBAR
         self.create_menu()
         self.create_toolbar()
 
@@ -69,13 +71,13 @@ class PersonalCard(QMainWindow):
         self.input_layout.addRow("Email:", self.email)
 
         self.position = QComboBox()
-        self.position.setPlaceholderText("Choose your position")
+        self.position.setPlaceholderText("Choose your position")  # empty option for validation
         self.position.addItems(
             ["Teaching Staff", "Supporting Staff", "Student", "Visitor"]
         )
         self.input_layout.addRow("Position:", self.position)
 
-        # Color picker row
+        # Color picker
         color_row = QWidget()
         color_layout = QHBoxLayout(color_row)
 
@@ -98,9 +100,8 @@ class PersonalCard(QMainWindow):
         self.output_layout = QVBoxLayout(self.bg_widget)
         self.output_layout.setSpacing(8)
 
-        # Initial card style
         self.bg_widget.setStyleSheet(
-            f"background-color: {default_color}; padding: 15px; border-radius: 10px;"
+            f"background-color: {default_color}; padding: 15px; border-radius: 10px; color: black;"
         )
 
         self.name_label = QLabel("Your name here")
@@ -109,12 +110,12 @@ class PersonalCard(QMainWindow):
         )
 
         self.age_label = QLabel("(Age)")
-        self.age_label.setStyleSheet("color: black;")
+        self.age_label.setStyleSheet("color: black")
 
         self.position_label = QLabel("Your position here")
-        self.position_label.setStyleSheet("font-size: 14pt; color: black;")
+        self.position_label.setStyleSheet("font-size: 14pt; color: black")
 
-        # Email Row (icon + text)
+        # Email row (icon + text)
         email_layout = QHBoxLayout()
         email_layout.setSpacing(6)
 
@@ -128,41 +129,63 @@ class PersonalCard(QMainWindow):
         )
 
         self.email_label = QLabel("your_username@domain.name")
-        self.email_label.setStyleSheet("color: black;")
+        self.email_label.setStyleSheet("color: black")
 
         email_layout.addWidget(self.email_icon)
         email_layout.addWidget(self.email_label)
         email_layout.addStretch()
 
-        # Add widgets to card
         self.output_layout.addWidget(self.name_label)
         self.output_layout.addWidget(self.age_label)
         self.output_layout.addWidget(self.position_label)
         self.output_layout.addLayout(email_layout)
         self.output_layout.addStretch()
 
+    def validate_inputs(self):
+        name = self.name.text().strip()
+        email = self.email.text().strip()
+        position = self.position.currentText()
+
+        if not name:
+            QMessageBox.warning(self, "Input Error", "Name cannot be empty.")
+            return False
+
+        if not email:
+            QMessageBox.warning(self, "Input Error", "Email cannot be empty.")
+            return False
+
+        # Regex email validation
+        pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        if not re.match(pattern, email):
+            QMessageBox.warning(self, "Input Error", "Invalid email format.")
+            return False
+
+        if not position:
+            QMessageBox.warning(self, "Input Error", "Please select a position.")
+            return False
+
+        return True
 
     def pick_color(self):
         color = QColorDialog.getColor(self.fav_color, self, "Pick a Color")
         if color.isValid():
             self.fav_color = color
-
-            # Only update preview box
             self.color_swatch.setStyleSheet(
                 f"background-color: {self.fav_color.name()}; border: 1px solid black;"
             )
-
             self.statusBar().showMessage(
                 "Color selected (Click Generate to apply)"
             )
 
     def update_display(self):
+        if not self.validate_inputs():
+            return
+
         self.name_label.setText(self.name.text())
         self.age_label.setText(f"({self.age.value()})")
         self.position_label.setText(self.position.currentText())
         self.email_label.setText(self.email.text())
 
-        # Apply color ONLY when Generate clicked
         self.bg_widget.setStyleSheet(
             f"background-color: {self.fav_color.name()}; "
             "padding: 15px; border-radius: 10px;"
@@ -255,13 +278,25 @@ class PersonalCard(QMainWindow):
 
         base = os.path.dirname(os.path.abspath(__file__))
 
-        generate_action = QAction(QIcon(os.path.join(base, "plus.png")),"Generate",self)
+        generate_action = QAction(
+            QIcon(os.path.join(base, "plus.png")),
+            "Generate",
+            self
+        )
         generate_action.triggered.connect(self.update_display)
 
-        save_action = QAction(QIcon(os.path.join(base, "diskette.png")),"Save",self)
+        save_action = QAction(
+            QIcon(os.path.join(base, "diskette.png")),
+            "Save",
+            self
+        )
         save_action.triggered.connect(self.save_card)
 
-        clear_action = QAction(QIcon(os.path.join(base, "delete.png")),"Clear",self)
+        clear_action = QAction(
+            QIcon(os.path.join(base, "delete.png")),
+            "Clear",
+            self
+        )
         clear_action.triggered.connect(self.clear_display)
 
         toolbar.addAction(generate_action)
@@ -272,10 +307,8 @@ class PersonalCard(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-
     window = PersonalCard()
     window.show()
-
     sys.exit(app.exec())
 
 
