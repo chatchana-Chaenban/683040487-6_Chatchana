@@ -10,132 +10,125 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget,
     QVBoxLayout, QHBoxLayout, QLabel,
     QLineEdit, QComboBox, QPushButton,
-    QMessageBox
+    QMessageBox, QSpinBox, QGroupBox
 )
 from PySide6.QtCharts import (
     QChart, QChartView, QBarSet,
     QBarSeries, QBarCategoryAxis, QValueAxis
 )
-from PySide6.QtGui import QPainter
+from PySide6.QtGui import QPainter, QColor
 from PySide6.QtCore import Qt
 
-class SaleChart(QMainWindow):
+class MonthlySalesApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Monthly Sales Chart")
-        self.resize(900, 600)
+        self.setWindowTitle("Monthly Sales Data Chart")
+        self.resize(1100, 600)
 
-        self.sales_data = {}
+        self.sales_data = []
 
-        self.months = ["Jan", "Feb", "Mar", "Apr", "May",
-                    "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        
-        self.categories = ["Electronics", "Clothing", "Food", "Others"]
+        self.create_ui()
 
-        self.InitUI()
+    def create_ui(self):
+        main_layout = QHBoxLayout(self)
 
-    def InitUI(self):
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
+        left_layout = QVBoxLayout()
 
-        main_layout = QVBoxLayout()
-
-        # Input file fields
-        input_layout = QHBoxLayout()
+        # ---- Import Group ----
+        import_group = QGroupBox("Import Data")
+        import_layout = QVBoxLayout()
 
         self.filename_input = QLineEdit()
-        self.filename_input.setPlaceholderText("Enter Filename")
-        input_layout.addWidget(QLabel("Filename:"))
-        input_layout.addWidget(self.filename_input)
-
-        self.month_combo = QComboBox()
-        self.month_combo.addItems(self.months)
-        input_layout.addWidget(QLabel("Month:"))
-        input_layout.addWidget(self.month_combo)
-
-        self.amount_input = QLineEdit()
-        self.amount_input.setPlaceholderText("Enter sales amount")
-        input_layout.addWidget(QLabel("Amount"))
-        input_layout.addWidget(self.amount_input)
-
-        self.category_combo = QComboBox()
-        self.category_combo.addItems(self.categories)
-        input_layout.addWidget(QLabel("Categories:"))
-        input_layout.addWidget(self.category_combo)
-
-        main_layout.addLayout(input_layout)
-
-        # Buttons fields
-        button_layout = QHBoxLayout()
+        self.filename_input.setPlaceholderText("sales_data.txt")
 
         self.import_btn = QPushButton("Import Data")
         self.import_btn.clicked.connect(self.import_data)
-        button_layout.addWidget(self.import_btn)
 
-        self.add_btn = QPushButton("Add Data")
+        import_layout.addWidget(self.filename_input)
+        import_layout.addWidget(self.import_btn)
+        import_group.setLayout(import_layout)
+
+        add_group = QGroupBox("Add Data")
+        add_layout = QVBoxLayout()
+
+        self.month_combo = QComboBox()
+        self.month_combo.addItems(
+            ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        )
+
+        self.sales_input = QSpinBox()
+        self.sales_input.setRange(0, 1000000)
+
+        self.category_combo = QComboBox()
+        self.category_combo.addItems(
+            ["Electronics", "Clothing", "Food", "Others"]
+        )
+
+        self.add_btn = QPushButton("+ Add Data")
         self.add_btn.clicked.connect(self.add_data)
 
-        self.clear_btn = QPushButton("Clear Chart")
+        self.clear_btn = QPushButton("✖ Clear Chart")
         self.clear_btn.clicked.connect(self.clear_chart)
 
-        button_layout.addWidget(self.import_btn)
-        button_layout.addWidget(self.add_btn)
-        button_layout.addWidget(self.clear_btn)
+        add_layout.addWidget(QLabel("Month"))
+        add_layout.addWidget(self.month_combo)
+        add_layout.addWidget(QLabel("Sales Amount ($)"))
+        add_layout.addWidget(self.sales_input)
+        add_layout.addWidget(QLabel("Product Category"))
+        add_layout.addWidget(self.category_combo)
+        add_layout.addWidget(self.add_btn)
+        add_layout.addWidget(self.clear_btn)
 
-        main_layout.addLayout(button_layout)
+        add_group.setLayout(add_layout)
 
+        left_layout.addWidget(import_group)
+        left_layout.addWidget(add_group)
+        left_layout.addStretch()
 
         self.chart = QChart()
-        self.chart.setTitle("Monthly Sales Report")
+        self.chart.setTitle("Monthly Sales by Product Category")
 
         self.chart_view = QChartView(self.chart)
         self.chart_view.setRenderHint(QPainter.Antialiasing)
 
-        main_layout.addWidget(self.chart_view)
+        main_layout.addLayout(left_layout, 1)
+        main_layout.addWidget(self.chart_view, 3)
 
-        central_widget.setLayout(main_layout)
-
-        self.update_chart()
 
     def import_data(self):
         filename = self.filename_input.text()
 
-        if not os.path.exists(filename):
-            QMessageBox.warning(self, "Error", "File does not exist!")
+        if not filename:
+            QMessageBox.warning(self, "Error", "Enter filename.")
             return
 
-        try:
-            with open(filename, "r") as file:
-                self.sales_data.clear()
-                for line in file:
-                    month, category, amount = line.strip().split(",")
-                    self.sales_data[(month, category)] = float(amount)
+        if not os.path.exists(filename):
+            QMessageBox.warning(self, "Error", "File does not exist.")
+            return
 
-            QMessageBox.information(self, "Success", "Data imported successfully!")
-            self.update_chart()
+        self.sales_data.clear()
 
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Invalid file format!\n{e}")
+        with open(filename, "r") as file:
+            for line in file:
+                parts = line.strip().split(",")
+                if len(parts) == 3:
+                    month, sales, category = parts
+                    try:
+                        self.sales_data.append(
+                            (month, int(sales), category)
+                        )
+                    except ValueError:
+                        continue
+
+        self.update_chart()
 
     def add_data(self):
         month = self.month_combo.currentText()
+        sales = self.sales_input.value()
         category = self.category_combo.currentText()
-        amount_text = self.amount_input.text()
 
-        if not amount_text.isdigit():
-            QMessageBox.warning(self, "Error", "Sales amount must be a number!")
-            return
-
-        amount = float(amount_text)
-
-        self.sales_data[(month, category)] = amount
-
-        # Save to file if filename provided
-        filename = self.filename_input.text()
-        if filename:
-            with open(filename, "a") as file:
-                file.write(f"{month},{category},{amount}\n")
-
+        self.sales_data.append((month, sales, category))
         self.update_chart()
 
     def clear_chart(self):
@@ -145,38 +138,51 @@ class SaleChart(QMainWindow):
     def update_chart(self):
         self.chart.removeAllSeries()
 
+        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+        categories = ["Electronics", "Clothing", "Food", "Others"]
+
+        colors = {
+            "Electronics": QColor("#4A90E2"),
+            "Clothing": QColor("#F5A623"),
+            "Food": QColor("#7ED321"),
+            "Others": QColor("#BD10E0")
+        }
+
         series = QBarSeries()
 
-        for category in self.categories:
+        for category in categories:
             bar_set = QBarSet(category)
+            bar_set.setColor(colors[category])
 
-            for month in self.months:
-                value = self.sales_data.get((month, category), 0)
-                bar_set.append(value)
+            for month in months:
+                total = sum(
+                    sales for m, sales, c in self.sales_data
+                    if m == month and c == category
+                )
+                bar_set.append(total)
 
             series.append(bar_set)
 
         self.chart.addSeries(series)
 
-        # X-axis 
         axis_x = QBarCategoryAxis()
-        axis_x.append(self.months)
+        axis_x.append(months)
         self.chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
 
-        # Y-axis 
         axis_y = QValueAxis()
         axis_y.setTitleText("Sales Amount")
         self.chart.addAxis(axis_y, Qt.AlignLeft)
         series.attachAxis(axis_y)
 
-        self.chart.setTitle("Monthly Sales Report")
         self.chart.legend().setVisible(True)
         self.chart.legend().setAlignment(Qt.AlignBottom)
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = SaleChart()
+    window = MonthlySalesApp()
     window.show()
     sys.exit(app.exec())
